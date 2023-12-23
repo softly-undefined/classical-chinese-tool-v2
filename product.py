@@ -1,4 +1,4 @@
-#from fpdf import FPDF
+import PyPDF2
 
 CHUNK_SIZE = 50
 
@@ -84,11 +84,12 @@ def translate(text):
 # This will generate the pdf from the two linked lists which should
 # already be created using translate_list and list_from_file
 def generate_pdf(english_translated, chinese_untranslated):
-    #This is where I need to do the stuff that interacts with the fpdf library
+    #This is where I need to do the stuff that interacts with the pypdf2 library
+    with open("output.pdf", "wb") as output_file:
+        pdf = PyPDF2.PdfFileWriter()
+        pdf.addBlankPage()
 
-
-    
-
+        pdf.write(output_file)
 
 
 
@@ -105,8 +106,7 @@ english_translation = translate_list(chinese_parse)
 
 chinese_parse.display()
 english_translation.display()
-print(chinese_parse.length)
-print(english_translation.length)
+
 
 
 #generate_pdf(english_translation, chinese_parse)

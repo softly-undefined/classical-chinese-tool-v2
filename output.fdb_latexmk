@@ -1,0 +1,19 @@
+# Fdb version 3
+["pdflatex"] 1703448760 "/Users/ericbennett/Desktop/github/classical-chinese-tool-v2/output.tex" "output.pdf" "output" 1703448760
+  "/Users/ericbennett/Desktop/github/classical-chinese-tool-v2/output.tex" 1703448753 2887831 fe15369aa2fe4b59b73b67efe2c6c635 ""
+  "/usr/local/texlive/2022/texmf-dist/tex/generic/iftex/iftex.sty" 1644112042 7237 bdd120a32c8fdb4b433cf9ca2e7cd98a ""
+  "/usr/local/texlive/2022/texmf-dist/tex/generic/iftex/ifvtex.sty" 1572645307 1057 525c2192b5febbd8c1f662c9468335bb ""
+  "/usr/local/texlive/2022/texmf-dist/tex/latex/base/article.cls" 1636758526 20144 8a7de377ae7a11ee924a7499611f5a9d ""
+  "/usr/local/texlive/2022/texmf-dist/tex/latex/base/size10.clo" 1636758526 8448 96f18c76bf608a36ee6fbf021ac1dd32 ""
+  "/usr/local/texlive/2022/texmf-dist/tex/latex/geometry/geometry.sty" 1578002852 41601 9cf6c5257b1bc7af01a58859749dd37a ""
+  "/usr/local/texlive/2022/texmf-dist/tex/latex/graphics/keyval.sty" 1622581934 2671 4de6781a30211fe0ea4c672e4a2a8166 ""
+  "/usr/local/texlive/2022/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def" 1644269979 29921 d0acc05a38bd4aa3af2017f0b7c137ce ""
+  "/usr/local/texlive/2022/texmf-dist/web2c/texmf.cnf" 1646502317 40171 cdab547de63d26590bebb3baff566530 ""
+  "/usr/local/texlive/2022/texmf-var/web2c/pdftex/pdflatex.fmt" 1675462598 2826434 960cf767d12acfe6d2398883c9eb6da8 ""
+  "/usr/local/texlive/2022/texmf.cnf" 1647878952 577 209b46be99c9075fd74d4c0369380e8c ""
+  "output.aux" 1703448760 32 3985256e7290058c681f74d7a3565a19 "pdflatex"
+  "output.tex" 1703448753 2887831 fe15369aa2fe4b59b73b67efe2c6c635 ""
+  (generated)
+  "output.aux"
+  "output.log"
+  "output.pdf"

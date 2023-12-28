@@ -5,10 +5,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 import time
 import subprocess, os
 
-CHUNK_SIZE = 40
-PRINT_SIZE = 500000
+CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 #chunk size * print size = section size (in characters)
-
 
 
 class Node:
@@ -62,11 +60,18 @@ def list_from_file(file_path):
             if len(chunk) == CHUNK_SIZE:
                 #print("Here's one: ")
                 #print(chunk)
-                linked_list.append(chunk)
+                if linked_list.head is None:
+                    linked_list.append(chunk + "[1]")
+                else:
+                    linked_list.append(chunk + '[' + str(linked_list.tail.number + 1) + ']')
+                
                 chunk = ''
             
         if chunk:
-            linked_list.append(chunk)
+            if linked_list.head is None:
+                linked_list.append(chunk + "[1]")
+            else:
+                linked_list.append(chunk + '[' + str(linked_list.tail.number + 1) + ']')
     end_time = time.time()
     print(str(round(end_time - start_time)) + " seconds to read file")
     return linked_list
@@ -82,8 +87,8 @@ def translate_list(untranslated_list):
         traverse_node = untranslated_list.head
 
         while traverse_node is not None:
-            #translated_list.append(translate(traverse_node.data)) #adds the translated text to the translated list
-            translated_list.append("example translated chunk")
+            #translate(traverse_node.data) #this will go where "example translated chunk" is
+            translated_list.append("example translated chunk" + '[' + str(traverse_node.number) + ']')
             traverse_node = traverse_node.next
 
     #returns the list, now with translations
@@ -96,7 +101,7 @@ def translate_list(untranslated_list):
 
 def translate(text):
     translation = ''
-    #here is where it should interact with the OpenAI API!
+    #here is where it should interact with the OpenAI API! excitingg
 
 
 
@@ -106,8 +111,47 @@ def translate(text):
 
     return translation
 
+
+def generate_txt(chinese_untranslated, english_translated):
+    english_length = 0
+    chinese_length = 0
+    print("begin txt file generation...")
+    start_time = time.time()
+    if chinese_untranslated.head is not None and english_translated.head is not None:
+        with open("output.txt","w") as file:
+
+            #english section!!
+            english_traverse_node = english_translated.head
+            while english_traverse_node is not None:
+                file.write(english_traverse_node.data + '\n')
+                english_length += len(english_traverse_node.data)
+                english_traverse_node = english_traverse_node.next
+
+            #intermediate section
+
+
+            #chinese section!!
+            chinese_traverse_node = chinese_untranslated.head
+            while chinese_traverse_node is not None:
+                file.write(chinese_traverse_node.data + '\n')
+                chinese_length += len(chinese_traverse_node.data)
+                chinese_traverse_node = chinese_traverse_node.next
+
+
+            print("\tEnglish characters: " + str(english_length))
+            print("\tChinese length: " + str(chinese_length))
+            print("\tTotal: " + str(chinese_length + english_length))
+    else:
+        print("your file is probably empty or something! Figure this out")
+
+    end_time = time.time()
+    print(str(round(end_time - start_time)) + " seconds to generate txt file")
+
+
+
 # This will generate the pdf from the two linked lists which should
 # already be created using translate_list and list_from_file
+#12/28/23 Note that I am not using this for the moment too much processing time
 def generate_pdf(chinese_untranslated, english_translated):
     print("begin pdf generation...")
     start_time = time.time()
@@ -179,6 +223,10 @@ def generate_pdf(chinese_untranslated, english_translated):
 
 
 
+
+#actual stuff to run::
+
+print("-------------------------------------")
 #this grabs the info from the chinese-doc.txt document
 chinese_parse = list_from_file("chinese-doc.txt") #make this a selectable file later on
 
@@ -187,7 +235,12 @@ english_translation = translate_list(chinese_parse)
 #chinese_parse.display()
 #english_translation.display()
 
-generate_pdf(chinese_parse, english_translation)
+#generate_pdf(chinese_parse, english_translation)
+print("-------------------------------------")
 
+generate_txt(chinese_parse, english_translation)
+print("-------------------------------------")
+print("Completed Successfully!")
+print("-------------------------------------")
 
 

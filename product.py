@@ -4,10 +4,15 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import time
 import subprocess, os
+from openai import OpenAI
+
+
 
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 #chunk size * print size = section size (in characters)
 
+chunk_num = 0
+client = OpenAI(api_key="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")
 
 class Node:
     def __init__(self, data):
@@ -63,7 +68,7 @@ def list_from_file(file_path):
                 if linked_list.head is None:
                     linked_list.append(chunk + "[1]")
                 else:
-                    linked_list.append(chunk + '[' + str(linked_list.tail.number + 1) + ']')
+                    linked_list.append(chunk + '[' + str(linked_list.tail.number + 1) + "p]")
                 
                 chunk = ''
             
@@ -87,8 +92,9 @@ def translate_list(untranslated_list):
         traverse_node = untranslated_list.head
 
         while traverse_node is not None:
-            #translate(traverse_node.data) #this will go where "example translated chunk" is
-            translated_list.append("example translated chunk" + '[' + str(traverse_node.number) + ']')
+            
+            translated_list.append(translate(traverse_node.data)+ '[' + str(traverse_node.number) + "p]") #this will go where "example translated chunk" is
+            #translated_list.append("example translated chunk" + '[' + str(traverse_node.number) + ']')
             traverse_node = traverse_node.next
 
     #returns the list, now with translations
@@ -100,16 +106,21 @@ def translate_list(untranslated_list):
 
 
 def translate(text):
-    translation = ''
-    #here is where it should interact with the OpenAI API! excitingg
+    #translation = ''
+
+    completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {
+            "role": "user",
+            "content": f"translate the following Classical Chinese text to English: '{text}'",
+        },
+    ],
+    )
+    print("chunk translated!" + str(chunk_num))
+    return completion.choices[0].message.content
 
 
-
-
-
-
-
-    return translation
 
 
 def generate_txt(chinese_untranslated, english_translated):
@@ -243,4 +254,4 @@ print("-------------------------------------")
 print("Completed Successfully!")
 print("-------------------------------------")
 
-
+print("now for some translation stuff")

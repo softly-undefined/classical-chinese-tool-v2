@@ -5,6 +5,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 import time
 import subprocess, os
 from openai import OpenAI
+from tqdm import tqdm
 
 
 
@@ -12,7 +13,7 @@ CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 #chunk size * print size = section size (in characters)
 
 chunk_num = 0
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="YOUR_API_KEY")
 
 class Node:
     def __init__(self, data):
@@ -66,17 +67,17 @@ def list_from_file(file_path):
                 #print("Here's one: ")
                 #print(chunk)
                 if linked_list.head is None:
-                    linked_list.append(chunk + "[1]")
+                    linked_list.append(chunk)
                 else:
-                    linked_list.append(chunk + '[' + str(linked_list.tail.number + 1) + "p]")
+                    linked_list.append(chunk)
                 
                 chunk = ''
             
         if chunk:
             if linked_list.head is None:
-                linked_list.append(chunk + "[1]")
+                linked_list.append(chunk)
             else:
-                linked_list.append(chunk + '[' + str(linked_list.tail.number + 1) + ']')
+                linked_list.append(chunk)
     end_time = time.time()
     print(str(round(end_time - start_time)) + " seconds to read file")
     return linked_list
@@ -90,12 +91,13 @@ def translate_list(untranslated_list):
     else:
         #the list has elements within it
         traverse_node = untranslated_list.head
-
-        while traverse_node is not None:
-            
-            translated_list.append(translate(traverse_node.data)+ '[' + str(traverse_node.number) + "p]") #this will go where "example translated chunk" is
-            #translated_list.append("example translated chunk" + '[' + str(traverse_node.number) + ']')
-            traverse_node = traverse_node.next
+        with tqdm(total=untranslated_list.length) as pbar:
+            while traverse_node is not None:
+                
+                translated_list.append(translate(traverse_node.data)) #this will go where "example translated chunk" is
+                pbar.update(1)
+                #translated_list.append("example translated chunk" + '[' + str(traverse_node.number) + ']')
+                traverse_node = traverse_node.next
 
     #returns the list, now with translations
     end_time = time.time()
@@ -112,12 +114,17 @@ def translate(text):
     model="gpt-3.5-turbo",
     messages=[
         {
+            "role": "system",
+            "content": "You are an AI model trained to translate Classical Chinese to English, translate each given text to English"
+        },
+        {
+            
             "role": "user",
-            "content": f"translate the following Classical Chinese text to English: '{text}'",
+            "content": text,
         },
     ],
     )
-    print("chunk translated!" + str(chunk_num))
+
     return completion.choices[0].message.content
 
 
@@ -133,21 +140,24 @@ def generate_txt(chinese_untranslated, english_translated):
 
             #english section!!
             english_traverse_node = english_translated.head
+            node_counter = 1
             while english_traverse_node is not None:
-                file.write(english_traverse_node.data + '\n')
+                file.write(english_traverse_node.data + '[' + str(node_counter) + "p]" + '\n')
                 english_length += len(english_traverse_node.data)
                 english_traverse_node = english_traverse_node.next
+                node_counter +=1
 
             #intermediate section
 
 
             #chinese section!!
             chinese_traverse_node = chinese_untranslated.head
+            node_counter = 1
             while chinese_traverse_node is not None:
-                file.write(chinese_traverse_node.data + '\n')
+                file.write(chinese_traverse_node.data + '[' + str(node_counter) + "p]" + '\n')
                 chinese_length += len(chinese_traverse_node.data)
                 chinese_traverse_node = chinese_traverse_node.next
-
+                node_counter += 1
 
             print("\tEnglish characters: " + str(english_length))
             print("\tChinese length: " + str(chinese_length))
@@ -185,9 +195,11 @@ def generate_pdf(chinese_untranslated, english_translated):
             #ENGLISH TRANSLATION SECTION
             print("\tbegin english section pdf generation...")
             english_traverse_node = english_translated.head
+            node_counter = 1
             while english_traverse_node is not None:
-                file.write(english_traverse_node.data + '\n')
+                file.write(english_traverse_node.data + '[' + node_counter + "p]" + '\n')
                 english_traverse_node = english_traverse_node.next
+                node_counter += 1
                 
                 
             #print("\tfinished english pdf generation! contains " + str(english_length) + " characters")
@@ -214,9 +226,11 @@ def generate_pdf(chinese_untranslated, english_translated):
             print("\tbegin chinese section pdf generation...")
             
             chinese_traverse_node = chinese_untranslated.head
+            node_counter = 1
             while chinese_traverse_node is not None:
-                file.write(chinese_traverse_node.data + '\n')
+                file.write(chinese_traverse_node.data + '[' + node_counter + "p]" + '\n')
                 chinese_traverse_node = chinese_traverse_node.next
+                node_counter += 1
                 
 
             #print("\tfinished chinese pdf generation! contains " + str(chinese_length) + " characters")
@@ -253,5 +267,3 @@ generate_txt(chinese_parse, english_translation)
 print("-------------------------------------")
 print("Completed Successfully!")
 print("-------------------------------------")
-
-print("now for some translation stuff")

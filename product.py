@@ -8,12 +8,14 @@ from openai import OpenAI
 from tqdm import tqdm
 
 
-
+DEBUG_MODE = False # will display the time taken for reading, translating, and file generation if True
+USE_AI = True # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
+AI_MODEL = "gpt-3.5-turbo"
+API_KEY = ""
 #chunk size * print size = section size (in characters)
 
-chunk_num = 0
-client = OpenAI(api_key="YOUR_API_KEY")
+client = OpenAI(api_key=API_KEY)
 
 class Node:
     def __init__(self, data):
@@ -37,22 +39,22 @@ class LinkedList:
         else:
             self.tail.next = new_node
             self.tail = new_node
-            
-
-    def display(self):
-        current_node = self.head
-        while current_node:
-            print(current_node.data)
-            current_node = current_node.next
 
 #takes the contents from the given file and puts every CHUNK_SIZE characters into a member of the linked list
 def list_from_file(file_path):
-    start_time = time.time()
-    print("begin reading file...")
+    if DEBUG_MODE: 
+        start_time = time.time()
+        print("-------------------------------------")
+        print("begin reading file...")
     #.txt file preprocessing goes here 
+
+
+
 
     # NEEDS TO BE ABLE TO DEAL WITH newline stuff !! rn it is calculated as a character?
     # what other preprocessing should be done ?
+
+
 
 
     # reading into linked_list
@@ -64,13 +66,10 @@ def list_from_file(file_path):
         for char in file.read():
             chunk += char
             if len(chunk) == CHUNK_SIZE:
-                #print("Here's one: ")
-                #print(chunk)
                 if linked_list.head is None:
                     linked_list.append(chunk)
                 else:
                     linked_list.append(chunk)
-                
                 chunk = ''
             
         if chunk:
@@ -78,54 +77,59 @@ def list_from_file(file_path):
                 linked_list.append(chunk)
             else:
                 linked_list.append(chunk)
-    end_time = time.time()
-    print(str(round(end_time - start_time)) + " seconds to read file")
+
+    if DEBUG_MODE: 
+        end_time = time.time()
+        print(str(round(end_time - start_time)) + " seconds to read file")
+        print("-------------------------------------")
     return linked_list
 
 def translate_list(untranslated_list):
-    print("begin translation...")
-    start_time = time.time()
+    if DEBUG_MODE: 
+        print("begin translation...")
+        start_time = time.time()
+
+
     translated_list = LinkedList()
     if untranslated_list.head is None:
         print("You gave an empty document!")
-    else:
-        #the list has elements within it
+    else: #the list has elements within it
         traverse_node = untranslated_list.head
         with tqdm(total=untranslated_list.length) as pbar:
             while traverse_node is not None:
-                
-                translated_list.append(translate(traverse_node.data)) #this will go where "example translated chunk" is
-                pbar.update(1)
-                #translated_list.append("example translated chunk" + '[' + str(traverse_node.number) + ']')
+                translated_list.append(translate(traverse_node.data))
+                pbar.update(1) 
                 traverse_node = traverse_node.next
 
-    #returns the list, now with translations
-    end_time = time.time()
-    print(str(round(end_time - start_time)) + " seconds to complete translation")
+
+    if DEBUG_MODE: 
+        end_time = time.time()
+        print(str(round(end_time - start_time)) + " seconds to complete translation")
     return translated_list
 
 
 
 
 def translate(text):
-    #translation = ''
+    if USE_AI:
+        completion = client.chat.completions.create(
+        model=AI_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI model trained to translate Classical Chinese to English, translate each given text to English"
+            },
+            {
+                
+                "role": "user",
+                "content": text,
+            },
+        ],
+        )
+        return completion.choices[0].message.content
+    else: 
+        return "example translated text "
 
-    completion = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {
-            "role": "system",
-            "content": "You are an AI model trained to translate Classical Chinese to English, translate each given text to English"
-        },
-        {
-            
-            "role": "user",
-            "content": text,
-        },
-    ],
-    )
-
-    return completion.choices[0].message.content
 
 
 
@@ -133,8 +137,9 @@ def translate(text):
 def generate_txt(chinese_untranslated, english_translated):
     english_length = 0
     chinese_length = 0
-    print("begin txt file generation...")
-    start_time = time.time()
+    if DEBUG_MODE: 
+        print("begin txt file generation...")
+        start_time = time.time()
     if chinese_untranslated.head is not None and english_translated.head is not None:
         with open("output.txt","w") as file:
 
@@ -159,23 +164,34 @@ def generate_txt(chinese_untranslated, english_translated):
                 chinese_traverse_node = chinese_traverse_node.next
                 node_counter += 1
 
-            print("\tEnglish characters: " + str(english_length))
-            print("\tChinese length: " + str(chinese_length))
-            print("\tTotal: " + str(chinese_length + english_length))
+            if DEBUG_MODE: 
+                print("\tEnglish characters: " + str(english_length))
+                print("\tChinese length: " + str(chinese_length))
+                print("\tTotal: " + str(chinese_length + english_length))
     else:
         print("your file is probably empty or something! Figure this out")
 
-    end_time = time.time()
-    print(str(round(end_time - start_time)) + " seconds to generate txt file")
+    if DEBUG_MODE:     
+        end_time = time.time()
+        print("-------------------------------------")
+        print(str(round(end_time - start_time)) + " seconds to generate txt file")
+
+
+
+
+
+
 
 
 
 # This will generate the pdf from the two linked lists which should
 # already be created using translate_list and list_from_file
 #12/28/23 Note that I am not using this for the moment too much processing time
+# 1/6/24 poterntially use markdown instead? depends on if pdf generation is important
 def generate_pdf(chinese_untranslated, english_translated):
-    print("begin pdf generation...")
-    start_time = time.time()
+    if DEBUG_MODE: 
+        print("begin pdf generation...")
+        start_time = time.time()
     if chinese_untranslated.head is not None and english_translated.head is not None:
         with open("output.tex","w") as file:
             #PREAMBLE
@@ -197,7 +213,7 @@ def generate_pdf(chinese_untranslated, english_translated):
             english_traverse_node = english_translated.head
             node_counter = 1
             while english_traverse_node is not None:
-                file.write(english_traverse_node.data + '[' + node_counter + "p]" + '\n')
+                file.write(english_traverse_node.data + '[' + node_counter + "p]" + '\n') #adds the reference counter
                 english_traverse_node = english_traverse_node.next
                 node_counter += 1
                 
@@ -228,7 +244,7 @@ def generate_pdf(chinese_untranslated, english_translated):
             chinese_traverse_node = chinese_untranslated.head
             node_counter = 1
             while chinese_traverse_node is not None:
-                file.write(chinese_traverse_node.data + '[' + node_counter + "p]" + '\n')
+                file.write(chinese_traverse_node.data + '[' + node_counter + "p]" + '\n') #adds the reference counter
                 chinese_traverse_node = chinese_traverse_node.next
                 node_counter += 1
                 
@@ -243,27 +259,17 @@ def generate_pdf(chinese_untranslated, english_translated):
         child = subprocess.call(["pdflatex", file_path])
         if child != 0:
             print("Exit-code not 0, check result!")
+    if DEBUG_MODE: 
+        print("-------------------------------------")
         end_time = time.time()
         print(str(round(end_time - start_time)) + " seconds to generate pdf")
 
+def translate_file(filepath):
+    chinese_parse = list_from_file("chinese-doc.txt") #make this a selectable file later on
+    english_translation = translate_list(chinese_parse)
+    generate_txt(chinese_parse, english_translation)
 
 
 
-#actual stuff to run::
+translate_file("chinese-doc.txt")
 
-print("-------------------------------------")
-#this grabs the info from the chinese-doc.txt document
-chinese_parse = list_from_file("chinese-doc.txt") #make this a selectable file later on
-
-english_translation = translate_list(chinese_parse)
-
-#chinese_parse.display()
-#english_translation.display()
-
-#generate_pdf(chinese_parse, english_translation)
-print("-------------------------------------")
-
-generate_txt(chinese_parse, english_translation)
-print("-------------------------------------")
-print("Completed Successfully!")
-print("-------------------------------------")

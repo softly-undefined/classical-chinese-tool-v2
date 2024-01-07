@@ -1,7 +1,3 @@
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
 import time
 import subprocess, os
 from openai import OpenAI
@@ -12,7 +8,7 @@ DEBUG_MODE = False # will display the time taken for reading, translating, and f
 USE_AI = True # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 AI_MODEL = "gpt-3.5-turbo"
-API_KEY = ""
+API_KEY = "YOUR_API_KEY"
 #chunk size * print size = section size (in characters)
 
 client = OpenAI(api_key=API_KEY)
@@ -48,29 +44,68 @@ def list_from_file(file_path):
         print("begin reading file...")
     #.txt file preprocessing goes here 
 
+    sentence_counter = 0
+    char_counter = 0
+    use_sentence = False
+
+    with open(file_path, 'r') as file:
+        for char in file.read():
+            if char != '\n' and char != ' ':
+                char_counter += 1
+            if char == '。' or char == '!' or char == '?':
+                sentence_counter += 1
+
+    num_sentences = 0
+    while (num_sentences*(char_counter/sentence_counter) < CHUNK_SIZE):
+        num_sentences += 1
+    
+    if DEBUG_MODE:
+        print("-------------------------------------")
+        print("number of sentences: " + str(sentence_counter))
+        print("number of characters: " + str(char_counter))
+        print("avg char per sentence: " + str(char_counter/sentence_counter))
+        print("num sentences per chunk size: " + str(num_sentences))
+    
+    
+
+    #some analysis of whether it is worth it to use sentences needed here to decide if should flick on num_sentence
+
+    #maybe do more analysis here?
+    if (char_counter/sentence_counter < 50):
+        use_sentence = True
 
 
 
-    # NEEDS TO BE ABLE TO DEAL WITH newline stuff !! rn it is calculated as a character?
-    # what other preprocessing should be done ?
+    #end section
+
+
+
+
+
+
 
 
 
 
     # reading into linked_list
     linked_list = LinkedList()
+    sentence_counter = 0
 
     with open(file_path, 'r') as file:
         chunk = ''
         
         for char in file.read():
-            chunk += char
-            if len(chunk) == CHUNK_SIZE:
+            if char != '\n' and char != ' ':  # removes all spaces and new lines to hopefully save on some tokens
+                if char == '。' or char == '!' or char == '?':
+                    sentence_counter += 1
+                chunk += char
+            if (len(chunk) == CHUNK_SIZE and not use_sentence) or (use_sentence and num_sentences == sentence_counter):
                 if linked_list.head is None:
                     linked_list.append(chunk)
                 else:
                     linked_list.append(chunk)
                 chunk = ''
+                sentence_counter = 0
             
         if chunk:
             if linked_list.head is None:
@@ -154,6 +189,7 @@ def generate_txt(chinese_untranslated, english_translated):
 
             #intermediate section
 
+            file.write("\n\nBelow is the original Chinese:\n\n\n")
 
             #chinese section!!
             chinese_traverse_node = chinese_untranslated.head

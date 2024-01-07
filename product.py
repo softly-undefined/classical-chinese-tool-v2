@@ -2,14 +2,28 @@ import time
 import subprocess, os
 from openai import OpenAI
 from tqdm import tqdm
-
+from tkinter.filedialog import askopenfilename
 
 DEBUG_MODE = False # will display the time taken for reading, translating, and file generation if True
-USE_AI = True # will interact with the chosen AI model if True
+USE_AI = False # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
-AI_MODEL = "gpt-3.5-turbo"
-API_KEY = "YOUR_API_KEY"
-#chunk size * print size = section size (in characters)
+AI_MODEL = "gpt-3.5-turbo" # describes which OpenAI language model is being used
+API_KEY = "YOUR_API_KEY" # input your OpenAI API key
+
+# Eric Bennett, 1/7/24
+#
+# This program translates a given .txt document of Classical Chinese characters to English.
+# The original document is read into a linked list of CHUNK_SIZE characters, which is then
+# iterated through to translate into English, and then both the Chinese and English are 
+# placed in a .txt document with markers for easy manuvering between Chinese and English.
+#
+#
+
+
+
+
+
+
 
 client = OpenAI(api_key=API_KEY)
 
@@ -17,26 +31,28 @@ class Node:
     def __init__(self, data):
         self.data = data
         self.next = None
-        self.number = 0
+        #self.number = 0 # allows the nodes to see their indexes, not currently in use
 
 class LinkedList:
     def __init__(self):
         self.head = None
         self.tail = None
-        self.length = 0
+        self.length = 0 #represents total number of chunks (used for progress bar)
 
     def append(self, data):
         new_node = Node(data)
         self.length += 1
-        new_node.number = self.length
+        #new_node.number = self.length
         if not self.head: #empty list
             self.head = new_node
             self.tail = new_node
-        else:
+        else: # uses tail node for o(1) time to append
             self.tail.next = new_node
             self.tail = new_node
 
-#takes the contents from the given file and puts every CHUNK_SIZE characters into a member of the linked list
+# takes the contents from the given file and puts every CHUNK_SIZE characters into a member of the linked list.
+# does preprocessing to check if the document has consistent punctuation and splits the document using sentences
+# instead of character lengths if that is true.
 def list_from_file(file_path):
     if DEBUG_MODE: 
         start_time = time.time()
@@ -68,26 +84,17 @@ def list_from_file(file_path):
     
     
 
-    #some analysis of whether it is worth it to use sentences needed here to decide if should flick on num_sentence
+    # some analysis of whether it is worth it to use sentences needed here to decide if should flick on num_sentence
 
-    #maybe do more analysis here?
+    # maybe do more analysis here? Right now if avg char/sentence is > 50 it will assume the document 
+    # has inconsistent punctuation and use character CHUNK_SIZE based chunking instead of sentences.
     if (char_counter/sentence_counter < 50):
         use_sentence = True
 
 
 
-    #end section
 
-
-
-
-
-
-
-
-
-
-    # reading into linked_list
+    # reading chunks into linked_list
     linked_list = LinkedList()
     sentence_counter = 0
 
@@ -119,11 +126,13 @@ def list_from_file(file_path):
         print("-------------------------------------")
     return linked_list
 
+# creates a new "translated" linked list, iterating through the parameter
+# untranslated text translating each chunk into English and placing the 
+# result as a memnber of the new linked list.
 def translate_list(untranslated_list):
     if DEBUG_MODE: 
         print("begin translation...")
         start_time = time.time()
-
 
     translated_list = LinkedList()
     if untranslated_list.head is None:
@@ -136,7 +145,6 @@ def translate_list(untranslated_list):
                 pbar.update(1) 
                 traverse_node = traverse_node.next
 
-
     if DEBUG_MODE: 
         end_time = time.time()
         print(str(round(end_time - start_time)) + " seconds to complete translation")
@@ -144,7 +152,8 @@ def translate_list(untranslated_list):
 
 
 
-
+# takes a parameter string and uses the OpenAI API to translate it to English
+# from Classical Chinese (if the USE_AI constant is set to True)
 def translate(text):
     if USE_AI:
         completion = client.chat.completions.create(
@@ -168,7 +177,9 @@ def translate(text):
 
 
 
-
+# takes the information stored in the untranslated and translated Linked Lists and 
+# writes it to a .txt file, adding in markers [1p], [2p] throughout to allow for
+# easy manuvering between the Chinese and the English translations.
 def generate_txt(chinese_untranslated, english_translated):
     english_length = 0
     chinese_length = 0
@@ -224,6 +235,7 @@ def generate_txt(chinese_untranslated, english_translated):
 # already be created using translate_list and list_from_file
 #12/28/23 Note that I am not using this for the moment too much processing time
 # 1/6/24 poterntially use markdown instead? depends on if pdf generation is important
+# CURRENTLY NOT IN USE BY THE PROGRAM
 def generate_pdf(chinese_untranslated, english_translated):
     if DEBUG_MODE: 
         print("begin pdf generation...")
@@ -239,10 +251,6 @@ def generate_pdf(chinese_untranslated, english_translated):
             #file.write("\\usepackage{xeCJK}\n")
 
             file.write("\\begin{document}\n")
-
-
-
-
 
             #ENGLISH TRANSLATION SECTION
             print("\tbegin english section pdf generation...")
@@ -307,5 +315,10 @@ def translate_file(filepath):
 
 
 
-translate_file("chinese-doc.txt")
 
+
+#actually doing things:
+
+
+file_path = askopenfilename(title="Select the input .txt file containing Classical Chinese text: ")
+translate_file(file_path)

@@ -46,7 +46,7 @@ class LinkedList:
         if not self.head: #empty list
             self.head = new_node
             self.tail = new_node
-        else: # uses tail node for o(1) time to append
+        else:
             self.tail.next = new_node
             self.tail = new_node
 

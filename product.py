@@ -3,12 +3,16 @@ import subprocess, os
 from openai import OpenAI
 from tqdm import tqdm
 from tkinter.filedialog import askopenfilename
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import ttk
+#import gui
 
-DEBUG_MODE = False # will display the time taken for reading, translating, and file generation if True
-USE_AI = False # will interact with the chosen AI model if True
+DEBUG_MODE = True # will display the time taken for reading, translating, and file generation if True
+USE_AI = True # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 AI_MODEL = "gpt-3.5-turbo" # describes which OpenAI language model is being used
-API_KEY = "YOUR_API_KEY" # input your OpenAI API key
+API_KEY = "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" # input your OpenAI API key
 
 # Eric Bennett, 1/7/24
 #
@@ -20,12 +24,93 @@ API_KEY = "YOUR_API_KEY" # input your OpenAI API key
 #
 
 
-
-
-
-
-
 client = OpenAI(api_key=API_KEY)
+
+class GUI:
+    
+
+    def __init__(self):
+        self.WINDOW_WIDTH = 500
+        self.WINDOW_HEIGHT = 500
+        #conditions for translate button working
+        self.file_selected = False
+        self.directory_selected = False
+        self.translating = False
+        self.aimodel = "gpt-3.5-turbo"
+
+
+        def radio_button_selected():
+            # Retrieve the selected value from the radio button variable
+            selected_value = radio_var.get()
+            self.aimodel = selected_value
+            # Print the selected value
+            print("Selected:", selected_value)
+
+
+        self.root = tk.Tk()
+        self.root.title("Classical Chinese Translator")
+        self.root.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
+
+        self.label_title = tk.Label(self.root, text="Classical Chinese Translator V2")
+        self.label_title.pack(anchor=tk.W)
+        
+        self.label_text = tk.Label(self.root, text="The purpose of this application is to allow the translation of Classical Chinese texts using OpenAI's AI translation tools. To make a translation, select a file, select a model, and finally click the translate button.", wraplength=self.WINDOW_WIDTH-10, justify=tk.LEFT)
+        self.label_text.pack(anchor=tk.W)
+
+        self.select_button = tk.Button(self.root, text = "Select file to translate", command=self.file_selection)
+        self.select_button.pack(padx=10, pady=10, anchor=tk.W)
+
+        self.destination_button = tk.Button(self.root, text = "Select destination folder", command=self.file_destination)
+        self.destination_button.pack(padx=10, pady=10, anchor=tk.W)
+
+        self.button = tk.Button(self.root, text="---TRANSLATE---", font=('Arial', 18), command=self.button_click)
+        self.button.pack(padx=10, pady=10, anchor=tk.W)
+
+
+        radio_var = tk.StringVar()
+
+        radio_button1 = tk.Radiobutton(self.root, text="gpt-3.5-turbo", variable=radio_var, value="gpt-3.5-turbo", command=radio_button_selected)
+        radio_button1.pack()
+
+        radio_button2 = tk.Radiobutton(self.root, text="gpt-4              ", variable=radio_var, value="gpt-4", command=radio_button_selected)
+        radio_button2.pack()
+
+        self.root.mainloop()
+
+        
+
+    def button_click(self):
+        if self.file_selected is True and self.directory_selected is True and self.translating is False:
+            self.translating = True
+
+            #print("Hello World")
+            
+            translate_file(self.file_path, self.directory_path, self.aimodel)
+            
+            # for i in range(100):
+            #     self.progress_bar_val += 1
+            #     self.progress_bar['value'] = self.progress_bar_val
+            #     self.root.update_idletasks
+                
+
+    def file_selection(self):
+        self.file_path = filedialog.askopenfilename()
+        if self.file_path:
+            print("Selected file:", self.file_path)
+            self.file_selected = True
+            self.select_button.config(text=self.file_path)
+        else:
+            print("No file selected.")
+
+    def file_destination(self):
+        self.directory_path = filedialog.askdirectory()
+        if self.directory_path:
+            print("Selected directory:", self.directory_path)
+            self.directory_selected = True
+            self.destination_button.config(text=self.directory_path)
+            # Do something with the selected directory
+        else:
+            print("No directory selected.")
 
 class Node:
     def __init__(self, data):
@@ -129,7 +214,7 @@ def list_from_file(file_path):
 # creates a new "translated" linked list, iterating through the parameter
 # untranslated text translating each chunk into English and placing the 
 # result as a memnber of the new linked list.
-def translate_list(untranslated_list):
+def translate_list(untranslated_list, aimodel):
     if DEBUG_MODE: 
         print("begin translation...")
         start_time = time.time()
@@ -141,7 +226,7 @@ def translate_list(untranslated_list):
         traverse_node = untranslated_list.head
         with tqdm(total=untranslated_list.length) as pbar:
             while traverse_node is not None:
-                translated_list.append(translate(traverse_node.data))
+                translated_list.append(translate(traverse_node.data, aimodel))
                 pbar.update(1) 
                 traverse_node = traverse_node.next
 
@@ -154,10 +239,10 @@ def translate_list(untranslated_list):
 
 # takes a parameter string and uses the OpenAI API to translate it to English
 # from Classical Chinese (if the USE_AI constant is set to True)
-def translate(text):
+def translate(text, aimodel):
     if USE_AI:
         completion = client.chat.completions.create(
-        model=AI_MODEL,
+        model=aimodel,
         messages=[
             {
                 "role": "system",
@@ -180,14 +265,16 @@ def translate(text):
 # takes the information stored in the untranslated and translated Linked Lists and 
 # writes it to a .txt file, adding in markers [1p], [2p] throughout to allow for
 # easy manuvering between the Chinese and the English translations.
-def generate_txt(chinese_untranslated, english_translated):
+def generate_txt(chinese_untranslated, english_translated, directory_path):
     english_length = 0
     chinese_length = 0
     if DEBUG_MODE: 
         print("begin txt file generation...")
         start_time = time.time()
+
+    write_path = os.path.join(directory_path, "output.txt")
     if chinese_untranslated.head is not None and english_translated.head is not None:
-        with open("output.txt","w") as file:
+        with open(write_path,"w") as file:
 
             #english section!!
             english_traverse_node = english_translated.head
@@ -308,10 +395,10 @@ def generate_pdf(chinese_untranslated, english_translated):
         end_time = time.time()
         print(str(round(end_time - start_time)) + " seconds to generate pdf")
 
-def translate_file(filepath):
-    chinese_parse = list_from_file("chinese-doc.txt") #make this a selectable file later on
-    english_translation = translate_list(chinese_parse)
-    generate_txt(chinese_parse, english_translation)
+def translate_file(filepath, directory_path, aimodel):
+    chinese_parse = list_from_file(filepath) #make this a selectable file later on
+    english_translation = translate_list(chinese_parse, aimodel)
+    generate_txt(chinese_parse, english_translation, directory_path)
 
 
 
@@ -320,5 +407,7 @@ def translate_file(filepath):
 #actually doing things:
 
 
-file_path = askopenfilename(title="Select the input .txt file containing Classical Chinese text: ")
-translate_file(file_path)
+GUI()
+
+#file_path = askopenfilename(title="Select the input .txt file containing Classical Chinese text: ")
+#translate_file(file_path)

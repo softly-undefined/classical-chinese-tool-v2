@@ -6,13 +6,12 @@ from tkinter.filedialog import askopenfilename
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
-#import gui
 
 DEBUG_MODE = True # will display the time taken for reading, translating, and file generation if True
 USE_AI = True # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 AI_MODEL = "gpt-3.5-turbo" # describes which OpenAI language model is being used
-API_KEY = "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" # input your OpenAI API key
+API_KEY = "" # input your OpenAI API key
 
 # Eric Bennett, 1/7/24
 #
@@ -20,7 +19,6 @@ API_KEY = "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" # input your Ope
 # The original document is read into a linked list of CHUNK_SIZE characters, which is then
 # iterated through to translate into English, and then both the Chinese and English are 
 # placed in a .txt document with markers for easy manuvering between Chinese and English.
-#
 #
 
 
@@ -57,6 +55,7 @@ class GUI:
         self.label_text = tk.Label(self.root, text="The purpose of this application is to allow the translation of Classical Chinese texts using OpenAI's AI translation tools. To make a translation, select a file, select a model, and finally click the translate button.", wraplength=self.WINDOW_WIDTH-10, justify=tk.LEFT)
         self.label_text.pack(anchor=tk.W)
 
+
         self.select_button = tk.Button(self.root, text = "Select file to translate", command=self.file_selection)
         self.select_button.pack(padx=10, pady=10, anchor=tk.W)
 
@@ -65,7 +64,6 @@ class GUI:
 
         self.button = tk.Button(self.root, text="---TRANSLATE---", font=('Arial', 18), command=self.button_click)
         self.button.pack(padx=10, pady=10, anchor=tk.W)
-
 
         radio_var = tk.StringVar()
 
@@ -82,10 +80,8 @@ class GUI:
     def button_click(self):
         if self.file_selected is True and self.directory_selected is True and self.translating is False:
             self.translating = True
-
-            #print("Hello World")
-            
             translate_file(self.file_path, self.directory_path, self.aimodel)
+            self.translating = False
             
             # for i in range(100):
             #     self.progress_bar_val += 1
@@ -100,6 +96,7 @@ class GUI:
             self.file_selected = True
             self.select_button.config(text=self.file_path)
         else:
+            self.file_selected = False
             print("No file selected.")
 
     def file_destination(self):
@@ -110,6 +107,7 @@ class GUI:
             self.destination_button.config(text=self.directory_path)
             # Do something with the selected directory
         else:
+            self.directory_selected = False
             print("No directory selected.")
 
 class Node:
@@ -157,15 +155,16 @@ def list_from_file(file_path):
                 sentence_counter += 1
 
     num_sentences = 0
-    while (num_sentences*(char_counter/sentence_counter) < CHUNK_SIZE):
-        num_sentences += 1
+    if (sentence_counter > 0):
+        while (num_sentences*(char_counter/sentence_counter) < CHUNK_SIZE):
+            num_sentences += 1
     
-    if DEBUG_MODE:
-        print("-------------------------------------")
-        print("number of sentences: " + str(sentence_counter))
-        print("number of characters: " + str(char_counter))
-        print("avg char per sentence: " + str(char_counter/sentence_counter))
-        print("num sentences per chunk size: " + str(num_sentences))
+        if DEBUG_MODE:
+            print("-------------------------------------")
+            print("number of sentences: " + str(sentence_counter))
+            print("number of characters: " + str(char_counter))
+            print("avg char per sentence: " + str(char_counter/sentence_counter))
+            print("num sentences per chunk size: " + str(num_sentences))
     
     
 
@@ -173,8 +172,9 @@ def list_from_file(file_path):
 
     # maybe do more analysis here? Right now if avg char/sentence is > 50 it will assume the document 
     # has inconsistent punctuation and use character CHUNK_SIZE based chunking instead of sentences.
-    if (char_counter/sentence_counter < 50):
-        use_sentence = True
+    if (sentence_counter > 0):
+        if (char_counter/sentence_counter < 50):
+            use_sentence = True
 
 
 
@@ -265,7 +265,7 @@ def translate(text, aimodel):
 # takes the information stored in the untranslated and translated Linked Lists and 
 # writes it to a .txt file, adding in markers [1p], [2p] throughout to allow for
 # easy manuvering between the Chinese and the English translations.
-def generate_txt(chinese_untranslated, english_translated, directory_path):
+def generate_txt(chinese_untranslated, english_translated, directory_path, aimodel):
     english_length = 0
     chinese_length = 0
     if DEBUG_MODE: 
@@ -275,6 +275,9 @@ def generate_txt(chinese_untranslated, english_translated, directory_path):
     write_path = os.path.join(directory_path, "output.txt")
     if chinese_untranslated.head is not None and english_translated.head is not None:
         with open(write_path,"w") as file:
+
+            file.write(f"Translation created with model: {aimodel} \n\n")
+
 
             #english section!!
             english_traverse_node = english_translated.head
@@ -396,9 +399,9 @@ def generate_pdf(chinese_untranslated, english_translated):
         print(str(round(end_time - start_time)) + " seconds to generate pdf")
 
 def translate_file(filepath, directory_path, aimodel):
-    chinese_parse = list_from_file(filepath) #make this a selectable file later on
+    chinese_parse = list_from_file(filepath)
     english_translation = translate_list(chinese_parse, aimodel)
-    generate_txt(chinese_parse, english_translation, directory_path)
+    generate_txt(chinese_parse, english_translation, directory_path, aimodel)
 
 
 

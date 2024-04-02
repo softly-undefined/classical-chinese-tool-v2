@@ -35,6 +35,7 @@ class GUI:
         self.directory_selected = False
         self.translating = False
         self.aimodel = "gpt-3.5-turbo"
+        
 
 
         def radio_button_selected():
@@ -49,11 +50,17 @@ class GUI:
         self.root.title("Classical Chinese Translator")
         self.root.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
 
+        self.file_name = tk.StringVar()
+        self.file_name.set("output")
+
         self.label_title = tk.Label(self.root, text="Classical Chinese Translator V2")
         self.label_title.pack(anchor=tk.W)
         
-        self.label_text = tk.Label(self.root, text="The purpose of this application is to allow the translation of Classical Chinese texts using OpenAI's AI translation tools. To make a translation, select a file, select a model, and finally click the translate button.", wraplength=self.WINDOW_WIDTH-10, justify=tk.LEFT)
+        self.label_text = tk.Label(self.root, text="The purpose of this application is to allow the translation of Classical Chinese texts using OpenAI's AI translation tools. To make a translation, select a file, select a model, change the output name if you want, and click the translate button.", wraplength=self.WINDOW_WIDTH-10, justify=tk.LEFT)
         self.label_text.pack(anchor=tk.W)
+
+        self.save_button = tk.Entry(self.root, textvariable= self.file_name)
+        self.save_button.pack()
 
 
         self.select_button = tk.Button(self.root, text = "Select file to translate", command=self.file_selection)
@@ -80,7 +87,8 @@ class GUI:
     def button_click(self):
         if self.file_selected is True and self.directory_selected is True and self.translating is False:
             self.translating = True
-            translate_file(self.file_path, self.directory_path, self.aimodel)
+            file_name = self.file_name.get()
+            translate_file(self.file_path, self.directory_path, self.aimodel, file_name)
             self.translating = False
             
             # for i in range(100):
@@ -265,14 +273,14 @@ def translate(text, aimodel):
 # takes the information stored in the untranslated and translated Linked Lists and 
 # writes it to a .txt file, adding in markers [1p], [2p] throughout to allow for
 # easy manuvering between the Chinese and the English translations.
-def generate_txt(chinese_untranslated, english_translated, directory_path, aimodel):
+def generate_txt(chinese_untranslated, english_translated, directory_path, aimodel, file_name):
     english_length = 0
     chinese_length = 0
     if DEBUG_MODE: 
         print("begin txt file generation...")
         start_time = time.time()
 
-    write_path = os.path.join(directory_path, "output.txt")
+    write_path = os.path.join(directory_path, f"{file_name}.txt")
     if chinese_untranslated.head is not None and english_translated.head is not None:
         with open(write_path,"w") as file:
 
@@ -398,10 +406,10 @@ def generate_pdf(chinese_untranslated, english_translated):
         end_time = time.time()
         print(str(round(end_time - start_time)) + " seconds to generate pdf")
 
-def translate_file(filepath, directory_path, aimodel):
+def translate_file(filepath, directory_path, aimodel, file_name):
     chinese_parse = list_from_file(filepath)
     english_translation = translate_list(chinese_parse, aimodel)
-    generate_txt(chinese_parse, english_translation, directory_path, aimodel)
+    generate_txt(chinese_parse, english_translation, directory_path, aimodel, file_name)
 
 
 

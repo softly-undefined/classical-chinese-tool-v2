@@ -1,6 +1,9 @@
 import time
 import subprocess, os
 from openai import OpenAI
+import anthropic
+
+
 from tqdm import tqdm
 from tkinter.filedialog import askopenfilename
 import tkinter as tk
@@ -11,7 +14,8 @@ DEBUG_MODE = True # will display the time taken for reading, translating, and fi
 USE_AI = True # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
 AI_MODEL = "gpt-3.5-turbo" # describes which OpenAI language model is being used
-API_KEY = "" # input your OpenAI API key
+OPEN_AI_API_KEY = "" # input your OpenAI API key
+ANTHROPIC_API_KEY = ""
 
 # Eric Bennett, 1/7/24
 #
@@ -22,7 +26,8 @@ API_KEY = "" # input your OpenAI API key
 #
 
 
-client = OpenAI(api_key=API_KEY)
+open_ai_client = OpenAI(api_key=OPEN_AI_API_KEY)
+anthropic_client = anthropic.Anthropic(api_key= ANTHROPIC_API_KEY)
 
 class GUI:
     
@@ -79,6 +84,12 @@ class GUI:
 
         radio_button2 = tk.Radiobutton(self.root, text="gpt-4              ", variable=radio_var, value="gpt-4", command=radio_button_selected)
         radio_button2.pack()
+
+        radio_button3 = tk.Radiobutton(self.root, text="claude3-sonnet", variable=radio_var, value="claude-3-sonnet-20240229", command=radio_button_selected)
+        radio_button3.pack()
+
+        radio_button4 = tk.Radiobutton(self.root, text="claude3-opus", variable=radio_var, value="claude-3-opus-20240229", command=radio_button_selected)
+        radio_button4.pack()
 
         self.root.mainloop()
 
@@ -174,7 +185,7 @@ def list_from_file(file_path):
             print("avg char per sentence: " + str(char_counter/sentence_counter))
             print("num sentences per chunk size: " + str(num_sentences))
     
-    
+
 
     # some analysis of whether it is worth it to use sentences needed here to decide if should flick on num_sentence
 
@@ -249,21 +260,43 @@ def translate_list(untranslated_list, aimodel):
 # from Classical Chinese (if the USE_AI constant is set to True)
 def translate(text, aimodel):
     if USE_AI:
-        completion = client.chat.completions.create(
-        model=aimodel,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an AI model trained to translate Classical Chinese to English, translate each given text to English"
-            },
-            {
-                
-                "role": "user",
-                "content": text,
-            },
-        ],
-        )
-        return completion.choices[0].message.content
+        if aimodel == "gpt-3.5-turbo" or aimodel == "gpt-4": #This section is used for OPENAI apis
+            completion = open_ai_client.chat.completions.create(
+                model=aimodel,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an AI model trained to translate Classical Chinese to English, translate the given text to English"
+                    },
+                    {
+                        
+                        "role": "user",
+                        "content": text,
+                    },
+                ]
+            )
+            return completion.choices[0].message.content
+
+
+        else:
+            message = anthropic_client.messages.create(
+            model=aimodel, #"claude-3-opus-20240229"
+            max_tokens=1000,
+            temperature=0,
+            system="Take the input Classical Chinese text and translate it to English without using any new-line characters ('\\n')",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": text
+                        }
+                    ]
+                }
+            ]
+            )
+            return message.content[0].text
     else: 
         return "example translated text "
 
@@ -419,6 +452,3 @@ def translate_file(filepath, directory_path, aimodel, file_name):
 
 
 GUI()
-
-#file_path = askopenfilename(title="Select the input .txt file containing Classical Chinese text: ")
-#translate_file(file_path)

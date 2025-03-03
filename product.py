@@ -1,7 +1,11 @@
 import time
 import subprocess, os
-from openai import OpenAI
-import anthropic
+
+# import anthropic
+from translationmodels.openai import OpenAITranslator
+from translationmodels.anthropic import AnthropicTranslator
+from translationmodels.llama import LlamaTranslator
+from translationmodels.deepseek import DeepSeekTranslator
 
 
 from tqdm import tqdm
@@ -13,9 +17,8 @@ from tkinter import ttk
 DEBUG_MODE = True # will display the time taken for reading, translating, and file generation if True
 USE_AI = True # will interact with the chosen AI model if True
 CHUNK_SIZE = 100 #describes the number of characters per translated chunk
-AI_MODEL = "gpt-3.5-turbo" # describes which OpenAI language model is being used
-OPEN_AI_API_KEY = "" # input your OpenAI API key
-ANTHROPIC_API_KEY = ""
+AI_MODEL = "gpt-4o-mini" # describes which OpenAI language model is being used
+
 
 # Eric Bennett, 1/7/24
 #
@@ -26,15 +29,21 @@ ANTHROPIC_API_KEY = ""
 #
 
 
-open_ai_client = OpenAI(api_key=OPEN_AI_API_KEY)
-anthropic_client = anthropic.Anthropic(api_key= ANTHROPIC_API_KEY)
+class Config:
+    def __init__(self):
+        self.openai_client = None
+        self.anthropic_client = None
+        self.llama_client = None
+        self.deepseek_client = None
+
+config = Config()
 
 class GUI:
     
 
     def __init__(self):
         self.WINDOW_WIDTH = 500
-        self.WINDOW_HEIGHT = 500
+        self.WINDOW_HEIGHT = 600
         #conditions for translate button working
         self.file_selected = False
         self.directory_selected = False
@@ -57,8 +66,14 @@ class GUI:
 
         self.file_name = tk.StringVar()
         self.file_name.set("output")
+        
+        self.openai_api = tk.StringVar()
+        self.openai_api.set("Paste OpenAI API key here")
 
-        self.label_title = tk.Label(self.root, text="Classical Chinese Translator V2")
+        self.anthropic_api = tk.StringVar()
+        self.anthropic_api.set("Paste Anthropic API key here")
+
+        self.label_title = tk.Label(self.root, text="Classical Chinese Translator V2.5 2024")
         self.label_title.pack(anchor=tk.W)
         
         self.label_text = tk.Label(self.root, text="The purpose of this application is to allow the translation of Classical Chinese texts using OpenAI's AI translation tools. To make a translation, select a file, select a model, change the output name if you want, and click the translate button.", wraplength=self.WINDOW_WIDTH-10, justify=tk.LEFT)
@@ -67,29 +82,46 @@ class GUI:
         self.save_button = tk.Entry(self.root, textvariable= self.file_name)
         self.save_button.pack()
 
+        self.openai_api_button = tk.Entry(self.root, textvariable= self.openai_api)
+        self.openai_api_button.pack()
+
+        self.anthropic_api_button = tk.Entry(self.root, textvariable= self.anthropic_api)
+        self.anthropic_api_button.pack()
+
 
         self.select_button = tk.Button(self.root, text = "Select file to translate", command=self.file_selection)
-        self.select_button.pack(padx=10, pady=10, anchor=tk.W)
+        self.select_button.pack(padx=10, pady=10, anchor=tk.CENTER)
 
         self.destination_button = tk.Button(self.root, text = "Select destination folder", command=self.file_destination)
-        self.destination_button.pack(padx=10, pady=10, anchor=tk.W)
+        self.destination_button.pack(padx=10, pady=10, anchor=tk.CENTER)
 
-        self.button = tk.Button(self.root, text="---TRANSLATE---", font=('Arial', 18), command=self.button_click)
-        self.button.pack(padx=10, pady=10, anchor=tk.W)
+        self.button = tk.Button(self.root, text="-----TRANSLATE-----", font=('Arial', 18), command=self.button_click)
+        self.button.pack(padx=10, pady=10, anchor=tk.CENTER)
 
         radio_var = tk.StringVar()
 
-        radio_button1 = tk.Radiobutton(self.root, text="gpt-3.5-turbo", variable=radio_var, value="gpt-3.5-turbo", command=radio_button_selected)
+        radio_button1 = tk.Radiobutton(self.root, text="gpt-4o (best)", variable=radio_var, value="gpt-4o", command=radio_button_selected)
         radio_button1.pack()
 
-        radio_button2 = tk.Radiobutton(self.root, text="gpt-4              ", variable=radio_var, value="gpt-4", command=radio_button_selected)
-        radio_button2.pack()
+        radio_button35 = tk.Radiobutton(self.root, text="gpt-4o-mini (cheapest/fastest)", variable=radio_var, value="gpt-4o-mini", command=radio_button_selected)
+        radio_button35.pack()
 
-        radio_button3 = tk.Radiobutton(self.root, text="claude3-sonnet", variable=radio_var, value="claude-3-sonnet-20240229", command=radio_button_selected)
+        radio_button3 = tk.Radiobutton(self.root, text="Llama3.1-8B (make sure Ollama is running)", variable=radio_var, value="llama3.1", command=radio_button_selected)
         radio_button3.pack()
 
-        radio_button4 = tk.Radiobutton(self.root, text="claude3-opus", variable=radio_var, value="claude-3-opus-20240229", command=radio_button_selected)
-        radio_button4.pack()
+        radio_button34 = tk.Radiobutton(self.root, text="Llama3.2-3B (make sure Ollama is running)", variable=radio_var, value="llama3.2", command=radio_button_selected)
+        radio_button34.pack()
+
+        radio_button5 = tk.Radiobutton(self.root, text="claude3.5-sonnet (current best model)", variable=radio_var, value="claude-3-5-sonnet-latest", command=radio_button_selected)
+        radio_button5.pack()
+
+        radio_button6 = tk.Radiobutton(self.root, text="claude3.5-haiku (good/fast)", variable=radio_var, value="claude-3-5-haiku-latest", command=radio_button_selected)
+        radio_button6.pack()
+
+        radio_button7 = tk.Radiobutton(self.root, text="Deepseek-R1:7B", variable=radio_var, value="deepseek-r1:7b", command=radio_button_selected)
+        radio_button7.pack()
+
+
 
         self.root.mainloop()
 
@@ -98,8 +130,33 @@ class GUI:
     def button_click(self):
         if self.file_selected is True and self.directory_selected is True and self.translating is False:
             self.translating = True
-            file_name = self.file_name.get()
-            translate_file(self.file_path, self.directory_path, self.aimodel, file_name)
+
+            openai_api_key = self.openai_api.get()
+            anthropic_api_key = self.anthropic_api.get()
+
+
+            if "gpt" in self.aimodel.lower():
+                if openai_api_key == "Paste OpenAI API key here":
+                    print("Paste your OpenAI API key in the designated area")
+                else:
+                    if config.openai_client is None:  # Initialize only if not set
+                        config.openai_client = OpenAITranslator(api_key=openai_api_key)
+            elif "claude" in self.aimodel.lower():
+                if anthropic_api_key == "Paste Anthropic API key here":
+                    print("Paste your Anthropic API key in the designated area")
+                else:
+                    if config.anthropic_client is None:
+                        config.anthropic_client = AnthropicTranslator(api_key=anthropic_api_key)
+            elif "llama" in self.aimodel.lower():  # Handle Llama
+                if config.llama_client is None:
+                    config.llama_client = LlamaTranslator(model=self.aimodel) 
+            elif "deepseek" in self.aimodel.lower():  # Handle Llama
+                if config.deepseek_client is None:
+                    config.deepseek_client = DeepSeekTranslator()
+            
+            else:
+                print("Error: Unrecognized model selection.")
+            translate_file(self.file_path, self.directory_path, self.aimodel, self.file_name.get())
             self.translating = False
             
             # for i in range(100):
@@ -260,48 +317,31 @@ def translate_list(untranslated_list, aimodel):
 # from Classical Chinese (if the USE_AI constant is set to True)
 def translate(text, aimodel):
     if USE_AI:
-        if aimodel == "gpt-3.5-turbo" or aimodel == "gpt-4": #This section is used for OPENAI apis
-            completion = open_ai_client.chat.completions.create(
-                model=aimodel,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an AI model trained to translate Classical Chinese to English, translate the given text to English"
-                    },
-                    {
-                        
-                        "role": "user",
-                        "content": text,
-                    },
-                ]
-            )
-            return completion.choices[0].message.content
-
-
+        if "gpt" in aimodel.lower(): # Make an OPENAI api call
+            if config.openai_client is None:
+                print("Error: OpenAI client not initialized. Provide a valid API key.")
+                return None
+            return config.openai_client.translate(text, aimodel)
+        elif "claude" in aimodel.lower():
+            if config.anthropic_client is None:
+                print("Error: Anthropic client not initialized. Provide a valid API key.")
+                return None
+            return config.anthropic_client.translate(text, aimodel)
+        elif "llama" in aimodel.lower():
+            if config.llama_client is None:
+                print("Error: Llama client not initialized.")
+                return None
+            return config.llama_client.translate(text)  # No need to pass model
+        elif "deepseek" in aimodel.lower():
+            if config.deepseek_client is None:
+                print("Error: Deepseek client not initialized")
+                return None
+            return config.deepseek_client.translate(text)
         else:
-            message = anthropic_client.messages.create(
-            model=aimodel, #"claude-3-opus-20240229"
-            max_tokens=1000,
-            temperature=0,
-            system="Take the input Classical Chinese text and translate it to English without using any new-line characters ('\\n')",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": text
-                        }
-                    ]
-                }
-            ]
-            )
-            return message.content[0].text
+            print("Error: Unrecognized model selection.")
+            return None
     else: 
         return "example translated text "
-
-
-
 
 # takes the information stored in the untranslated and translated Linked Lists and 
 # writes it to a .txt file, adding in markers [1p], [2p] throughout to allow for
@@ -395,19 +435,7 @@ def generate_pdf(chinese_untranslated, english_translated):
                 
             #print("\tfinished english pdf generation! contains " + str(english_length) + " characters")
 
-
-
-
-
-
-
             file.write("\n\n\nnow the chinese:\n\n\n")
-
-
-
-
-
-
 
 
             # Add the chinese to the document::

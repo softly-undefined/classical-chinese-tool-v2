@@ -14,12 +14,6 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 
-DEBUG_MODE = True # will display the time taken for reading, translating, and file generation if True
-USE_AI = True # will interact with the chosen AI model if True
-CHUNK_SIZE = 100 #describes the number of characters per translated chunk
-AI_MODEL = "gpt-4o-mini" # describes which OpenAI language model is being used
-
-
 # Eric Bennett, 1/7/24
 #
 # This program translates a given .txt document of Classical Chinese characters to English.
@@ -27,6 +21,22 @@ AI_MODEL = "gpt-4o-mini" # describes which OpenAI language model is being used
 # iterated through to translate into English, and then both the Chinese and English are 
 # placed in a .txt document with markers for easy manuvering between Chinese and English.
 #
+
+DEBUG_MODE = True # will display the time taken for reading, translating, and file generation if True
+USE_AI = True # will interact with the chosen AI model if True
+CHUNK_SIZE = 100 #describes the number of characters per translated chunk
+AI_MODEL = "gpt-4o-mini" # describes which OpenAI language model is being used
+
+def load_model_options(filepath="models.txt"):
+    model_dict = {}
+    with open(filepath, 'r', encoding='utf-8') as f:
+        for line in f:
+            if '|' in line and not line.strip().startswith("#"):
+                model, label = line.strip().split('|', 1)
+                model_dict[model] = label
+    return model_dict
+
+MODEL_OPTIONS = load_model_options()
 
 
 class Config:
@@ -43,7 +53,7 @@ class GUI:
 
     def __init__(self):
         self.WINDOW_WIDTH = 500
-        self.WINDOW_HEIGHT = 600
+        self.WINDOW_HEIGHT = 700
         #conditions for translate button working
         self.file_selected = False
         self.directory_selected = False
@@ -99,27 +109,38 @@ class GUI:
         self.button.pack(padx=10, pady=10, anchor=tk.CENTER)
 
         radio_var = tk.StringVar()
+        radio_var.set("gpt-4o-mini")
 
-        radio_button1 = tk.Radiobutton(self.root, text="gpt-4o (best)", variable=radio_var, value="gpt-4o", command=radio_button_selected)
-        radio_button1.pack()
 
-        radio_button35 = tk.Radiobutton(self.root, text="gpt-4o-mini (cheapest/fastest)", variable=radio_var, value="gpt-4o-mini", command=radio_button_selected)
-        radio_button35.pack()
+        # radio_button1 = tk.Radiobutton(self.root, text="gpt-4o (best)", variable=radio_var, value="gpt-4o", command=radio_button_selected)
+        # radio_button1.pack()
 
-        radio_button3 = tk.Radiobutton(self.root, text="Llama3.1-8B (make sure Ollama is running)", variable=radio_var, value="llama3.1", command=radio_button_selected)
-        radio_button3.pack()
+        # radio_button35 = tk.Radiobutton(self.root, text="gpt-4o-mini (cheapest/fastest)", variable=radio_var, value="gpt-4o-mini", command=radio_button_selected)
+        # radio_button35.pack()
 
-        radio_button34 = tk.Radiobutton(self.root, text="Llama3.2-3B (make sure Ollama is running)", variable=radio_var, value="llama3.2", command=radio_button_selected)
-        radio_button34.pack()
+        # radio_button3 = tk.Radiobutton(self.root, text="Llama3.1-8B (make sure Ollama is running)", variable=radio_var, value="llama3.1", command=radio_button_selected)
+        # radio_button3.pack()
 
-        radio_button5 = tk.Radiobutton(self.root, text="claude3.5-sonnet (current best model)", variable=radio_var, value="claude-3-5-sonnet-latest", command=radio_button_selected)
-        radio_button5.pack()
+        # radio_button34 = tk.Radiobutton(self.root, text="Llama3.2-3B (make sure Ollama is running)", variable=radio_var, value="llama3.2", command=radio_button_selected)
+        # radio_button34.pack()
 
-        radio_button6 = tk.Radiobutton(self.root, text="claude3.5-haiku (good/fast)", variable=radio_var, value="claude-3-5-haiku-latest", command=radio_button_selected)
-        radio_button6.pack()
+        # radio_button5 = tk.Radiobutton(self.root, text="claude3.5-sonnet (current best model)", variable=radio_var, value="claude-3-5-sonnet-latest", command=radio_button_selected)
+        # radio_button5.pack()
 
-        radio_button7 = tk.Radiobutton(self.root, text="Deepseek-R1:7B", variable=radio_var, value="deepseek-r1:7b", command=radio_button_selected)
-        radio_button7.pack()
+        # radio_button6 = tk.Radiobutton(self.root, text="claude3.5-haiku (good/fast)", variable=radio_var, value="claude-3-5-haiku-latest", command=radio_button_selected)
+        # radio_button6.pack()
+
+        # radio_button7 = tk.Radiobutton(self.root, text="Deepseek-R1:7B", variable=radio_var, value="deepseek-r1:7b", command=radio_button_selected)
+        # radio_button7.pack()
+        for model_value, model_label in MODEL_OPTIONS.items():
+            radio_button = tk.Radiobutton(
+                self.root,
+                text=model_label,
+                variable=radio_var,
+                value=model_value,
+                command=radio_button_selected
+            )
+            radio_button.pack()
 
 
 
@@ -135,7 +156,7 @@ class GUI:
             anthropic_api_key = self.anthropic_api.get()
 
 
-            if "gpt" in self.aimodel.lower():
+            if "gpt" in self.aimodel.lower() or self.aimodel.startswith("o"):
                 if openai_api_key == "Paste OpenAI API key here":
                     print("Paste your OpenAI API key in the designated area")
                 else:

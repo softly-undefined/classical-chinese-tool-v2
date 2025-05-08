@@ -1,0 +1,4 @@
+openai>=1.0.0
+anthropic>=0.25.0
+langchain_ollama>=0.1.5
+tqdm>=4.64.0

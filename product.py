@@ -362,8 +362,12 @@ def translate(text, aimodel):
                 return None
             return config.deepseek_client.translate(text)
         else:
-            print("Error: Unrecognized model selection.")
-            return None
+            if config.llama_client is None:
+                print("Error: ollama client not initialized.")
+                return None
+            return config.llama_client.translate(text)  # No need to pass model
+            # print("Error: Unrecognized model selection.")
+            # return None
     else: 
         return "example translated text "
 

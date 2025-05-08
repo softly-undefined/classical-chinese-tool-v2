@@ -10,3 +10,4 @@ claude-3-5-haiku-20241022|claude-3.5-haiku ($0.80 / 1M input) (fastest model)
 llama3.1|Llama3.1-8B (make sure Ollama is running)
 llama3.2|Llama3.2-3B (make sure Ollama is running)
 deepseek-r1:7b|Deepseek-R1:7B
+gemma3|gemma3

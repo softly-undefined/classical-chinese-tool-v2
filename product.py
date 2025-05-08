@@ -174,9 +174,12 @@ class GUI:
             elif "deepseek" in self.aimodel.lower():  # Handle Llama
                 if config.deepseek_client is None:
                     config.deepseek_client = DeepSeekTranslator()
-            
-            else:
-                print("Error: Unrecognized model selection.")
+            else: #handle using ollama
+                if config.llama_client is None:
+                    config.llama_client = LlamaTranslator(model=self.aimodel) 
+                # print("Error: Unrecognized model selection.")
+
+
             translate_file(self.file_path, self.directory_path, self.aimodel, self.file_name.get())
             self.translating = False
             

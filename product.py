@@ -14,7 +14,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 
-# Eric Bennett, 1/7/24
+# Eric Bennett, 1/7/24 (updated 5/8/25)
 #
 # This program translates a given .txt document of Classical Chinese characters to English.
 # The original document is read into a linked list of CHUNK_SIZE characters, which is then
@@ -111,27 +111,6 @@ class GUI:
         radio_var = tk.StringVar()
         radio_var.set("gpt-4o-mini")
 
-
-        # radio_button1 = tk.Radiobutton(self.root, text="gpt-4o (best)", variable=radio_var, value="gpt-4o", command=radio_button_selected)
-        # radio_button1.pack()
-
-        # radio_button35 = tk.Radiobutton(self.root, text="gpt-4o-mini (cheapest/fastest)", variable=radio_var, value="gpt-4o-mini", command=radio_button_selected)
-        # radio_button35.pack()
-
-        # radio_button3 = tk.Radiobutton(self.root, text="Llama3.1-8B (make sure Ollama is running)", variable=radio_var, value="llama3.1", command=radio_button_selected)
-        # radio_button3.pack()
-
-        # radio_button34 = tk.Radiobutton(self.root, text="Llama3.2-3B (make sure Ollama is running)", variable=radio_var, value="llama3.2", command=radio_button_selected)
-        # radio_button34.pack()
-
-        # radio_button5 = tk.Radiobutton(self.root, text="claude3.5-sonnet (current best model)", variable=radio_var, value="claude-3-5-sonnet-latest", command=radio_button_selected)
-        # radio_button5.pack()
-
-        # radio_button6 = tk.Radiobutton(self.root, text="claude3.5-haiku (good/fast)", variable=radio_var, value="claude-3-5-haiku-latest", command=radio_button_selected)
-        # radio_button6.pack()
-
-        # radio_button7 = tk.Radiobutton(self.root, text="Deepseek-R1:7B", variable=radio_var, value="deepseek-r1:7b", command=radio_button_selected)
-        # radio_button7.pack()
         for model_value, model_label in MODEL_OPTIONS.items():
             radio_button = tk.Radiobutton(
                 self.root,
@@ -156,7 +135,7 @@ class GUI:
             anthropic_api_key = self.anthropic_api.get()
 
 
-            if "gpt" in self.aimodel.lower() or self.aimodel.startswith("o"):
+            if ("gpt" in self.aimodel.lower() or self.aimodel.startswith("o")) and "gpt-oss" not in self.aimodel.lower(): # Handle OpenAI models
                 if openai_api_key == "Paste OpenAI API key here":
                     print("Paste your OpenAI API key in the designated area")
                 else:
@@ -177,16 +156,10 @@ class GUI:
             else: #handle using ollama
                 if config.llama_client is None:
                     config.llama_client = LlamaTranslator(model=self.aimodel) 
-                # print("Error: Unrecognized model selection.")
 
 
             translate_file(self.file_path, self.directory_path, self.aimodel, self.file_name.get())
             self.translating = False
-            
-            # for i in range(100):
-            #     self.progress_bar_val += 1
-            #     self.progress_bar['value'] = self.progress_bar_val
-            #     self.root.update_idletasks
                 
 
     def file_selection(self):
@@ -214,7 +187,6 @@ class Node:
     def __init__(self, data):
         self.data = data
         self.next = None
-        #self.number = 0 # allows the nodes to see their indexes, not currently in use
 
 class LinkedList:
     def __init__(self):
@@ -241,8 +213,8 @@ def list_from_file(file_path):
         start_time = time.time()
         print("-------------------------------------")
         print("begin reading file...")
-    #.txt file preprocessing goes here 
 
+    #.txt file preprocessing
     sentence_counter = 0
     char_counter = 0
     use_sentence = False
@@ -275,9 +247,6 @@ def list_from_file(file_path):
     if (sentence_counter > 0):
         if (char_counter/sentence_counter < 50):
             use_sentence = True
-
-
-
 
     # reading chunks into linked_list
     linked_list = LinkedList()
@@ -313,7 +282,7 @@ def list_from_file(file_path):
 
 # creates a new "translated" linked list, iterating through the parameter
 # untranslated text translating each chunk into English and placing the 
-# result as a memnber of the new linked list.
+# result as a member of the new linked list.
 def translate_list(untranslated_list, aimodel):
     if DEBUG_MODE: 
         print("begin translation...")
@@ -335,13 +304,11 @@ def translate_list(untranslated_list, aimodel):
         print(str(round(end_time - start_time)) + " seconds to complete translation")
     return translated_list
 
-
-
-# takes a parameter string and uses the OpenAI API to translate it to English
+# takes a parameter string and uses the OpenAI API to translate it to English (later added more api options)
 # from Classical Chinese (if the USE_AI constant is set to True)
 def translate(text, aimodel):
     if USE_AI:
-        if "gpt" in aimodel.lower(): # Make an OPENAI api call
+        if "gpt" in aimodel.lower() and "gpt-oss" not in aimodel.lower(): # Make an OPENAI api call
             if config.openai_client is None:
                 print("Error: OpenAI client not initialized. Provide a valid API key.")
                 return None
@@ -425,14 +392,9 @@ def generate_txt(chinese_untranslated, english_translated, directory_path, aimod
 
 
 
-
-
-
-
-
 # This will generate the pdf from the two linked lists which should
 # already be created using translate_list and list_from_file
-#12/28/23 Note that I am not using this for the moment too much processing time
+# 12/28/23 Note that I am not using this for the moment too much processing time
 # 1/6/24 poterntially use markdown instead? depends on if pdf generation is important
 # CURRENTLY NOT IN USE BY THE PROGRAM
 def generate_pdf(chinese_untranslated, english_translated):
@@ -495,16 +457,11 @@ def generate_pdf(chinese_untranslated, english_translated):
         end_time = time.time()
         print(str(round(end_time - start_time)) + " seconds to generate pdf")
 
+# This is where everything comes together.
 def translate_file(filepath, directory_path, aimodel, file_name):
     chinese_parse = list_from_file(filepath)
     english_translation = translate_list(chinese_parse, aimodel)
     generate_txt(chinese_parse, english_translation, directory_path, aimodel, file_name)
 
-
-
-
-
 #actually doing things:
-
-
 GUI()

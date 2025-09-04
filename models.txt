@@ -1,13 +1,10 @@
-gpt-4o|gpt-4o ($2.50 / 1M) (best quality)
-gpt-4.1|gpt-4.1 ($2.00 / 1M) (newest)
-gpt-4o-mini|gpt-4o-mini ($0.15 / 1M) (cheap/fast)
-gpt-4.1-nano|gpt-4.1-nano ($0.10 / 1M) (cheapest)
-gpt-4.5-preview|gpt-4.5-preview ($75.00 / 1M) (most expensive)
-claude-3-7-sonnet-20250219|claude-3.7-sonnet ($3.00 / 1M) (current best model)
-claude-3-5-sonnet-20241022|claude-3.5-sonnet ($3.00 / 1M) (very capable)
-claude-3-opus-20240229|claude-3-opus ($15.00 / 1M input) (powerful for complex tasks)
-claude-3-5-haiku-20241022|claude-3.5-haiku ($0.80 / 1M input) (fastest model)
-llama3.1|Llama3.1-8B (make sure Ollama is running)
-llama3.2|Llama3.2-3B (make sure Ollama is running)
+gpt-5-nano-2025-08-07|gpt-5-nano-2025-08-07 ($0.05 / MTok input)
+gpt-5-mini-2025-08-07|gpt-5-mini-2025-08-07 ($0.25 / MTok input)
+gpt-5-2025-08-07|gpt-5-2025-08-07 ($1.25 / MTok input)
+gpt-oss:20b|gpt-oss:20b
+claude-sonnet-4-20250514|claude-sonnet-4-20250514 ($3 / MTok input)
+claude-opus-4-1-20250805|claude-opus-4-1-20250805 ($15 / MTok input) 
+claude-3-5-haiku-latest|claude-3.5-haiku-latest ($0.25 / MTok input)
 deepseek-r1:7b|Deepseek-R1:7B
+qwen3:8b|qwen3:8b
 gemma3|gemma3
